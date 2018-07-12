@@ -1,0 +1,24 @@
+% Este es el template usado para generar el fichero
+% de un problema que contenga UNA SOLA PREGUNTA
+% Los problemas con una sola pregunta por razones históricas
+% usan un formato diferente al de los problemas con varias preguntas
+\puntos{\V{puntos|int}} % Esto son los puntos de la única pregunta
+% La variable tags contendrá los tags concatenados separados por comas
+\begin{preguntasola}{\V{tags}}{\V{resumen}}
+\V{enunciado}
+
+\V{q.enunciado}
+
+%% if q.respuesta|trim() != "."
+\begin{solucion}\TH{\V{q.tam_hueco}}
+\V{q.respuesta}
+\end{solucion}
+%% endif
+
+%% if q.explicacion|length > 1
+\begin{explicacion}
+\V{q.explicacion}
+\end{explicacion}
+%% endif
+
+\end{preguntasola}

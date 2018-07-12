@@ -1,0 +1,723 @@
+\NeedsTeXFormat{LaTeX2e}%
+\ProvidesPackage{examen}[24/06/2014 v1.2 (c) JL Diaz]
+\RequirePackage{soul}%
+\RequirePackage{xcolor}%
+\newif\ifEX@resuelto
+\newif\ifEX@fichero
+\newif\ifEX@explicado
+\newif\ifEX@espejo
+\newif\ifEX@rotado
+\newif\ifEX@columns
+\EX@columnstrue
+\EX@resueltotrue
+\EX@ficherofalse
+\EX@explicadotrue
+\EX@espejofalse
+\EX@rotadofalse
+\DeclareOption{examen}{\EX@resueltofalse\EX@ficherofalse\EX@explicadofalse\EX@resueltotrue}
+\DeclareOption{resuelto}{\EX@resueltotrue}
+\DeclareOption{solucion}{\EX@resueltotrue}
+\DeclareOption{soluciones}{\EX@resueltotrue}
+\DeclareOption{noresuelto}{\EX@resueltofalse}
+\DeclareOption{sinsolucion}{\EX@resueltofalse}
+\DeclareOption{sinsoluciones}{\EX@resueltofalse}
+\DeclareOption{verficheros}{\EX@ficherotrue}
+\DeclareOption{noverficheros}{\EX@ficherofalse}
+\DeclareOption{explicado}{\EX@explicadotrue}
+\DeclareOption{explicacion}{\EX@explicadotrue}
+\DeclareOption{explicaciones}{\EX@explicadotrue}
+\DeclareOption{noexplicado}{\EX@explicadofalse}
+\DeclareOption{sinexplicacion}{\EX@explicadofalse}
+\DeclareOption{sinexplicaciones}{\EX@explicadofalse}
+\DeclareOption{espejo}{\EX@espejotrue}
+\DeclareOption{reflejada}{\EX@espejotrue}
+\DeclareOption{reflejado}{\EX@espejotrue}
+\DeclareOption{rotado}{\EX@rotadotrue}
+\DeclareOption{rotada}{\EX@rotadotrue}
+\DeclareOption{girado}{\EX@rotadotrue}
+\DeclareOption{girada}{\EX@rotadotrue}
+\DeclareOption{plantilla}{\EX@resueltotrue\EX@ficherofalse\EX@explicadofalse}
+\DeclareOption{desarrollo}{\EX@resueltotrue\EX@ficherotrue\EX@explicadofalse}
+\DeclareOption{debug}{\EX@resueltotrue\EX@ficherotrue\EX@explicadofalse}
+\DeclareOption{publicar}{\EX@resueltotrue\EX@ficherofalse\EX@explicadotrue}
+\DeclareOption{nocolumns}{\EX@columnsfalse}
+\ProcessOptions
+\ifEX@resuelto
+\colorlet{solucion}{blue!50!black}
+\else
+\colorlet{solucion}{white}
+\fi
+\ifEX@fichero
+\colorlet{fichero}{red!40!black!70!white}
+\else
+\colorlet{fichero}{white}
+\fi
+\colorlet{huecos}{black!30}
+\colorlet{explicacion}{blue!40!black}
+
+\ifEX@espejo
+ \ifEX@rotado
+  \def\transformar#1{\raisebox{1ex}{\scalebox{1}[-1]{#1}}}
+  \def\transforma#1{\scalebox{1}[-1]{#1}}
+ \else
+  \def\transformar#1{\raisebox{\alturacajarespuesta-1ex}{\scalebox{-1}[1]{#1}}}
+  \def\transforma#1{\scalebox{1}[1]{#1}}
+ \fi
+\else
+ \ifEX@rotado
+  \def\transformar#1{\raisebox{1ex}{\rotatebox{180}{#1}}}
+  \def\transforma#1{\rotatebox{180}{#1}}
+ \else
+  \def\transformar#1{\raisebox{\alturacajarespuesta-1ex}{#1}}
+  \def\transforma#1{#1}
+ \fi
+\fi
+
+\long\def\oculto#1{%
+\bgroup\color{solucion}\transforma{#1}\egroup
+}
+
+% A partir de aqui, el antiguo examen-resuelto.sty
+% Todavia requiere mucha limpieza y puesta a punto
+
+% Adaptado para xelatex, quitar inputenc, fontenc y babel
+% Poner en cambio fontspec y polyglossia
+%\usepackage[utf8]{inputenc}
+%\usepackage[T1]{fontenc}
+%\usepackage{times}
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+%\setmainfont{DejaVu Serif}\setsansfont{DejaVu Sans}\setmonofont{DejaVu Sans Mono}
+\usepackage{polyglossia}\setdefaultlanguage{spanish}
+\usepackage[a4paper]{geometry}
+%\usepackage{mathptm}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}          % Para incluir gráficos
+\usepackage{fancybox}          % Para el entorno respuesta
+\usepackage{fancyvrb}          % Para formatear los listados
+\usepackage{listings}
+%\usepackage{shortform}         % Para abreviar comandos, como ·ese·
+
+\usepackage{shortvrb}
+\usepackage{calc}        % Para especificar operaciones en ciertas expresiones
+\usepackage{ifthen}      % Para condicionales mas sencillos 
+\usepackage{pifont}      % Para simbolos chulos (marca en cada
+                         % problema, p.ej)
+\usepackage{paralist}    % Entornos itemize compactos
+\usepackage{fancyhdr}    % Para el encabezado
+\usepackage{currfile}        % Para obtener el nombre del fichero incluido
+\usepackage{tikz}
+\usepackage{xstring}
+\usetikzlibrary{snakes,calc,positioning}
+
+% Layout
+\geometry{landscape,left=1cm, right=1cm, top=2cm, bottom=7mm,
+  foot=7mm, head=.7cm}
+\setlength{\parindent}{0pt}
+
+
+\def\quitarutayextension#1.tex{#1} % Obtener solo el nombre del fichero
+\def\EsteFichero{\StrLeft{\currfilebase}{20}}
+
+\newcommand{\simbolopreguntasola}{\Pisymbol{pzd}{111}}
+\newcommand{\simbolopregunta}{\textemdash}
+\newcommand{\simbolopropuesto}{\Pisymbol{pzd}{46}}
+\newboolean{espreguntasola}
+\setboolean{espreguntasola}{false}
+\newboolean{esproblema}
+\setboolean{esproblema}{false}
+\newboolean{espreguntadeproblema}
+\setboolean{espreguntadeproblema}{false}
+\newboolean{ponerhueco}
+\setboolean{ponerhueco}{true}
+% ----- Definición de abreviaturas --------------------
+\MakeShortVerb{\·}
+%\MakeShortForm{\signal}{\§}
+\newcommand{\ES}{Entrada\slash Salida\xspace}
+\newcommand{\problemname}{Problema}
+\newcommand{\questionname}{Problema}
+\newbox\boxanswer
+
+\newcommand{\signal}[1]{{\textsf{\textsl{#1}}}}
+\newcommand{\barra}[1]{\relax\ifmmode\overline{\!#1}\else%
+$\overline{\text{#1}\,}$\fi}
+\catcode`\_=\active
+\def_{\relax\ifmmode\sb \else \_\fi}
+\addto\shorthandsspanish{\spanishdeactivate{~<>}}
+\newcommand{\ordfemenino}{\leavevmode\raise1ex\hbox{\underbar{\scriptsize
+      a}}}
+\newcommand{\ordmasculino}{\leavevmode\raise1ex\hbox{\underbar{\scriptsize
+      o}}}
+\newcommand{\er}{\leavevmode\raise1ex\hbox{\underbar{\scriptsize
+      er}}}
+%\DeclareInputText{"0AA}{\ordfemenino}
+%\DeclareInputText{"0BA}{\ordmasculino}
+
+% Opciones generales para la inclusión de gráficos
+%\graphicspath{{figuras/}}
+%\DeclareGraphicsExtensions{.eps,.ps}
+%\setkeys{Gin}{clip}
+
+% Otro entorno de enumeración, como alternativa a enumerate
+% Este escribe A) B) C) etc... en negrita
+% Ideado para ejercicios propuestos que contengan varias preguntas
+% (y también para sus soluciones)
+\newcounter{mienumc}
+\newenvironment{mienum}{%
+\begin{list}{\textbf{\Alph{mienumc})}}{\usecounter{mienumc}%
+\setlength{\itemsep}{0pt}
+\setlength{\labelwidth}{\widthof{X)}}
+}
+}
+{\end{list}}
+
+% El entorno unindent ``desindenta'', es decir, saca su contenido
+% hacia la izquierda un poquito. Ideado para usarlo con ejercicios
+% propuestos con un largo enunciado tras el cual viene una frase como
+% ``Teniendo en cuenta lo anterior, responder:''
+% Para que esa frase salga un poco por el margen izquierdo y destaque.
+% (detrás de esa frase iría un entorno mienum, siendo cada pregunta
+% un item)
+% \newenvironment{unindent}
+% {\begin{list}{}%
+% {\addtolength{\leftmargin}{-5em}\setlength{\labelwidth}{0pt}}\item}
+% {\end{list}}
+
+
+\def\mostrarnombrefichero{%
+\begin{picture}(0,0)(0,0)%
+\put(-10,3){\rotatebox{-90}{\scriptsize\color{fichero}\EsteFichero}}%
+\end{picture}\hskip0pt%
+}
+
+\def\puntos#1{% Para definir cuántos puntos vale una pregunta
+\xdef\punt@s{#1}%
+}
+\puntos{1} % Puntuación por defecto, se resetea a 1 en cada pregunta
+
+% Macro para mostrar la puntuación delante de cada pregunta
+\def\mostrarPts#1{\tikz[baseline=(P.base)]\node[inner sep=2pt,draw,fill=black!20,minimum width=1mm, minimum height=1mm,font=\sffamily\small](P){#1};}
+\def\mostrarPtsProblema#1{\tikz[baseline=(P.base)]\node[circle,inner sep=2pt,draw,minimum width=1mm, minimum height=1mm,font=\sffamily\small](P){#1};}
+
+% ----------------------------------------------------------------
+% El entorno problema
+% Tiene su propio contador (independiente de capítulos)
+\newcounter{problema}
+\newenvironment{problema}[2]{%
+\refstepcounter{problema}
+\setboolean{esproblema}{true}
+\goodbreak
+\begin{list}{\simbolopreguntasola}{%
+\setlength{\labelwidth}{\widthof{\simbolopreguntasola}}%
+\addtolength{\leftmargin}{-1.5em}
+}
+\item[\mostrarPtsProblema{\punt@s}]\llap{\mostrarnombrefichero}%
+%\textbf{\textsf{[\punt@s]}}\ %\ifnum\punt@s>1\addtocounter{pregunta}{\punt@s}%
+%\addtocounter{pregunta}{-1}\fi%
+%\xdef\punt@s{1}%
+}
+{\end{list}\setboolean{esproblema}{false}}
+
+% ----------------------------------------------------------------
+% El entorno preguntasola
+\newcounter{pregunta}
+\newenvironment{preguntasola}[2]{%
+\setboolean{espreguntasola}{true}%
+%\refstepcounter{pregunta}
+%\subsection*{\questionname~\arabic{problema}. \hrulefill}%
+%\addcontentsline{toc}{subsection}{%
+%\questionname~\arabic{problema}: #1}
+%\def\@milabel{#2}\ifx\@milabel\empty\relax\else\label{#2}\fi
+\refstepcounter{pregunta}%
+\goodbreak
+\begin{list}{\simbolopreguntasola}{%
+\setlength{\labelwidth}{\widthof{\simbolopreguntasola}}%
+\addtolength{\leftmargin}{-1.5em}%
+}
+%\vskip 5mm\mbox{}\llap{\simbolopreguntasola\ }%
+\item[\mostrarPtsProblema{\punt@s}]\rlap{\mostrarnombrefichero}%
+\ifnum\punt@s>1\addtocounter{pregunta}{\punt@s}%
+\addtocounter{pregunta}{-1}\fi%
+\puntos{1}%
+}
+{\setboolean{espreguntasola}{false}
+%\par\vskip 2mm
+\end{list}\vskip -2mm
+\TamanioHueco{2}}
+
+%----------------------------------------------------------------
+% El entorno pregunta (aplicable cuando hay varias preguntas dentro de
+% un mismo problema) Se numeran con el número del enunciado seguido
+% del número de la pregunta.:
+
+%\newcounter{pregunta}[problema]
+%\renewcommand\thepregunta{\theproblema .\@arabic\c@pregunta}
+\newenvironment{pregunta}[1]{%
+%\refstepcounter{pregunta}%
+\puntos{#1}
+\ifnum\punt@s>1\addtocounter{pregunta}{\punt@s}%
+%\addtocounter{pregunta}{-1}%
+\fi%
+\goodbreak
+\begin{list}{\simbolopregunta%~{\textbf{\sffamily\large\thepregunta}}
+}{%
+\setlength{\labelwidth}{\widthof{\simbolopregunta}}%
+\addtolength{\leftmargin}{-1.5em}
+}
+\setboolean{espreguntadeproblema}{true}
+\item[\mostrarPts{\punt@s}]\ifnum\punt@s>1\addtocounter{pregunta}{\punt@s}%
+\addtocounter{pregunta}{-1}\fi%
+\puntos{1}
+}
+{\end{list}\setboolean{espreguntadeproblema}{false}
+\TamanioHueco{2}}
+
+\newlength\alturacajarespuesta
+\setlength{\alturacajarespuesta}{2em}
+\def\cajarespuesta{
+\ifdim\alturacajarespuesta<1pt\else
+{\setlength{\fboxsep}{0pt}%
+\centerline{%
+\fbox{\begin{minipage}[t]{.98\columnwidth}%
+\rule{0pt}{\alturacajarespuesta}\end{minipage}}%
+% Versión que refleja la respuesta en un espejo
+\begin{picture}(0,0)(0,0)\put(-230,0){%\raisebox{\alturacajarespuesta}
+{\color{solucion}%
+\transformar{\box\boxanswer}}}\end{picture}}
+}
+% Versión que simplemente la pone azul
+%\begin{picture}(0,0)(0,0)\put(-235,-5){\raisebox{\alturacajarespuesta}
+%{\color{solucion}{\box\boxanswer}}}\end{picture}}%
+%}
+\fi}
+
+\newenvironment{enunciado}{%
+\goodbreak
+\begin{list}{}%
+{\addtolength{\leftmargin}{-1.5em}\setlength{\labelwidth}{0pt}}\item}
+{\end{list}}
+
+% ----------------------------------------------------------------
+% El entorno respuesta para mostrar la respuesta en una caja, cuando
+% se trata de una respuesta muy breve
+%\definecolor{fondo-respuesta}{gray}{0.35}
+%\definecolor{fondo-respuesta-otra}{gray}{0.6}
+\newenvironment{respuesta}{%
+% \samepage
+% \begin{list}{}{%
+% \setlength{\topsep}{0pt}%
+% \ifthenelse{\boolean{espreguntasola}}{\setlength{\leftmargin}{1.5cm}}%
+% {\setlength{\leftmargin}{0pt}}
+% }%
+% \item[]
+\begin{Sbox}\begin{minipage}[t]{.9\columnwidth}\color{solucion}%
+}
+{%
+ \end{minipage}\end{Sbox}%
+ \global\setbox\boxanswer=\TheSbox
+ \vskip .5ex\samepage\cajarespuesta
+}
+
+\let\solucion\respuesta
+\let\endsolucion\endrespuesta
+
+%----------------------------------------------------------------
+% La respuesta especial se aplica a preguntas que no tienen una caja
+% de respuesta en blanco, sino que debe figurar texto en esa caja (por
+% ejemplo, un par de palabras como ``Caso A: `` ``Caso B:'' y el resto
+% en blanco para que responda el alumno.
+%
+% El contenido de este entorno se mostrará tal cual en el examen,
+% excepto por el texto marcado con \oculto, que sera visible solo en
+% la version con soluciones (en la otra version, sale en color blanco
+% y por tanto no se ve, pero ocupa espacio).
+%
+% Es responsabilidad del profesor dejar espacio en blanco suficiente
+% mediante macros apropiadas (ej: \vskip)
+%
+% El texto se mete en una caja como las de respuesta.
+\newenvironment{respuestaespecial}{%
+\begin{Sbox}\begin{minipage}[t]{.98\columnwidth}}
+{\end{minipage}\end{Sbox}\TamanioHueco{0}%
+\par\samepage\kern1mm\centerline{\fbox{\TheSbox}}}
+
+
+%----------------------------------------------------------------
+% El siguiente entorno tiene el mismo objetivo que el anterior, pero
+% no se pone marco a la caja. Esta pensado mas bien para cuando la
+% caja de respuesta es una tabla, en la que el alumno tiene que
+% rellenar algunas casillas
+\newenvironment{respuestaespecial*}{%
+\begin{Sbox}\begin{minipage}[t]{.98\columnwidth}}
+{\end{minipage}\end{Sbox}%
+\par\samepage\kern 1mm\centerline{\TheSbox}\TamanioHueco{0}}
+
+
+% El siguiente comando permite poner en lugar de la caja de respuesta,
+% una figura que el alumno debe completar o rellenar. Para la version
+% resuelta se debe proporcionar otra figura con lo que falte. Es
+% responsabilidad del autor señalar en otro color (si asi se desea)
+% las partes de la figura que constituyen la respuesta, asi como
+% asegurarse que ambas figuras sean exactamente del mismo tamaño para
+% evitar variaciones en el maquetado entre el examen resuelto y el
+% examen sin soluciones.
+\newcommand{\respuestafigura}[3][width=.98\columnwidth]{
+\TamanioHueco{0}
+\ifEX@resuelto\def\@figura{#3}\else\def\@figura{#2}\fi
+\samepage\kern1mm\centerline{\fbox{\includegraphics[#1]{\@figura}}}}
+
+% ----------------------------------------------------------------
+% El entorno datos, para suministrar valores iniciales de los
+% registros y cosas asi. Se entiende que dentro de este entorno es
+% necesario usar un entorno itemize.
+\newenvironment{datos}{%
+\begin{Sbox}\begin{minipage}{.7\textwidth}
+\vskip -4mm
+\begin{tabular}{p{.96\textwidth}}
+\textsf{\textsf{DATOS}}\\
+\hline
+\end{tabular}\vskip 2mm
+}{\end{minipage}\end{Sbox}\begin{center}\setlength{\fboxsep}{5mm}%
+\shadowbox{\TheSbox}
+\end{center}
+}
+
+
+% ----------------------------------------------------------------
+% El entorno explicación.
+
+\ifEX@explicado
+\newenvironment{explicacion}{%
+ \begin{list}{}{%
+   \ifthenelse{\boolean{espreguntasola}}{\setlength{\leftmargin}{-1em}}
+   {\setlength{\leftmargin}{-1.5em}}
+\color{explicacion}
+ \setlength{\topsep}{0pt}%
+ \rmfamily%
+ }%
+\item[]
+ \textbf{\textsf{Explicación: }}
+}{%
+ \end{list}
+}
+\else
+\newenvironment{explicacion}{%
+\begin{Sbox}\begin{minipage}{\columnwidth}
+}{%
+\end{minipage}\end{Sbox}
+}
+\fi
+
+% ----------------------------------------------------------------
+% Para mostrar la respuesta sin explicacion
+\newcommand{\noexplicacion}{%
+}
+
+% ----------------------------------------------------------------
+% Entorno listado. Para que las referencias a las líneas del listado
+% puedan también almacenar el número del listado, es necesario
+% anteponer al listado el comando \cabezalistadio{label}. El pie del
+% listado se genera con \pielistado{label}. Entre ambos se pone el
+% entorno listado. Este entorno es una especie de verbatim, pero en el
+% que se pueden poner comandos latex. Los más importantes que se
+% suelen usar dentro del listado son:
+%
+% \falta{texto} Sustituye el texto por una caja vacía
+% \label{xxx} Marca esa linea y la página en que aparece para futuras
+%    referencias
+% \llabel{xxx} Marca esa línea y el número de listado en que aparece
+%    para futuras referencias. Al número de línea se accede con \ref{}
+%    y al número de listado con \pageref{}. En este caso no se puede
+%    referenciar la página en que aparece esa etiqueta.
+%
+% Dentro del entorno listado el punto y coma es un carácter especial
+% que pasa a cursiva el resto de la línea.
+%
+% Los listados se numeran de forma independiente a lo largo del libro
+\newcounter{listado}
+\newcommand{\cabezalistado}[1]{%
+\refstepcounter{listado}\label{#1}
+}
+
+\def\theFancyVerbLine{\arabic{FancyVerbLine}}
+\DefineVerbatimEnvironment{listado}{Verbatim}{frame=single,
+  fontsize=\footnotesize,
+  commandchars=\\\{\}, numbers=left, numbersep=3pt}
+
+\DefineVerbatimEnvironment{listadoC}{Verbatim}{frame=single,
+  fontsize=\footnotesize,
+  commandchars=\·\«\», numbers=left, numbersep=3pt}
+
+\DefineVerbatimEnvironment{listadoC*}{Verbatim}{frame=single,
+  fontsize=\footnotesize,
+  commandchars=\·\«\», numbers=left, numbersep=3pt, samepage}
+
+\DefineVerbatimEnvironment{codigo}{Verbatim}{frame=single,
+  xleftmargin=.5cm, xrightmargin=.5cm, fontsize=\footnotesize,
+  commandchars=\\\{\}, numbers=none, samepage}
+
+\DefineVerbatimEnvironment{codigoC}{Verbatim}{frame=single,
+  xleftmargin=.5cm, xrightmargin=.5cm, fontsize=\footnotesize,
+  commandchars=\·\«\», numbers=none, samepage}
+
+
+\gdef\PenaltyEnEstaLinea{\relax}
+\gdef\PenaltyDefault{1000} 
+\def\corte#1{\gdef\PenaltyEnEstaLinea{%
+\interlinepenalty=-500\gdef\PenaltyEnEstaLinea{\interlinepenalty=\PenaltyDefault}}}
+
+
+
+\def\FV@ListProcessLine@ii#1{%
+  \xdef\PenaltyDefault{\the\interlinepenalty}%
+  \setbox\@tempboxa=\FV@ListProcessLine{#1}%
+  \let\FV@ProcessLine\FV@ListProcessLine@iii}
+
+\def\FV@ListProcessLine@iv#1{%
+\PenaltyEnEstaLinea\penalty\interlinepenalty
+  \box\@tempboxa
+  \setbox\@tempboxa=\FV@ListProcessLine{#1}}%
+
+
+
+% \def\FV@ListProcessLine#1{%
+%   \hbox to \hsize{%
+%       \the\interlinepenalty-\PenaltyDefault
+%     \kern\leftmargin
+%     \hbox to \linewidth{%
+%       \FV@LeftListNumber
+%       \FV@LeftListFrame
+%       \FancyVerbFormatLine{#1}\hss
+% %% DG/SR modification begin - Jan. 28, 1998 (for numbers=right add-on)
+% %%      \FV@RightListFrame}%
+%       \FV@RightListFrame
+%       \FV@RightListNumber}%
+% %% DG/SR modification end
+%     \hss}}
+
+
+\newcommand{\pielistado}[1]{%
+\hfill{\textbf{Listado \arabic{listado}.} #1}\hfill\par
+}
+\begingroup
+\catcode`\^^M=\active
+  \gdef\FV@BeginScanning#1^^M{%
+    \gdef\@listadocaption{#1}%\ifx\@listadocaption\@empty\@warning{Listado sin titulo}\fi%
+    \FV@GetLine}%
+\endgroup
+\def\FV@EndList{%
+  \FV@ListProcessLastLine%
+  \FV@EndListFrame%
+  \endgroup%
+  \@endpetrue%
+  \ifx\@listadocaption\@empty\relax\else\pielistado{\@listadocaption}\fi
+}
+
+%Labels dentro del listado que almacenan el número de listado en
+%lugar del número de página
+\def\llabel#1{\@bsphack
+  \protected@write\@auxout{}%
+         {\string\newlabel{#1}{{\@currentlabel}{\thelistado}}}%
+  \@esphack}
+
+% Comando \falta{texto}
+\newlength\mialtura
+\newcommand{\falta}[2][0.6]{%
+\setlength{\mialtura}{\heightof{#2}*\real{#1}}%
+\raisebox{.2ex}{\colorbox{huecos}{\rule{0pt}{\mialtura}\rule{\widthof{#2}}{0pt}}}}
+
+% Para referirse al listado en el cual aparece una línea dada:
+% \listref
+\let\listref=\pageref
+
+% Para referirse a úna línea de un listado
+\newcommand{\linea}[1]{línea~\ref{#1} del listado~\listref{#1}}
+% ----------------------------------------------------------------
+% Comando \figura{fichero}{pie de figura}
+% Automáticamente define la label fig:fichero para referirse a esta
+% figura. Las figuras se numeran dentro de los capítulos.
+%
+\newcommand{\figura}[3][width=.7\textwidth, clip]{%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[#1]{#2}
+\caption{#3}\label{fig:#2}
+\end{center}
+\end{figure}
+}
+
+% Esta versión no intenta hacer ningún tipo de reescalado
+\newcommand{\figuranocambiar}[3][clip]{%
+\begin{figure}[tb]
+\begin{center}
+\includegraphics[#1]{#2}
+\caption{#3}\label{fig:#2}
+\end{center}
+\end{figure}
+}
+
+\lstset{
+  numbers=left, numberstyle=\scriptsize, numbersep=5pt,
+  language=python,
+  showstringspaces=false,
+  basicstyle=\ttfamily\footnotesize,
+  commentstyle=\slshape,
+%  backgroundcolor=\color{black!10},
+  xleftmargin=1ex,
+  xrightmargin=1ex,
+  frame=single,
+  aboveskip=1ex,
+  escapeinside=«»
+}
+
+% Contents of listings-setup.tex
+\usepackage{xcolor}
+
+% \lstset{
+%     basicstyle=\ttfamily,
+%     numbers=left,
+%     keywordstyle=\color[rgb]{0.13,0.29,0.53}\bfseries,
+%     stringstyle=\color[rgb]{0.31,0.60,0.02},
+%     commentstyle=\color[rgb]{0.56,0.35,0.01}\itshape,
+%     numberstyle=\scriptsize,
+%     stepnumber=1,
+%     numbersep=5pt,
+%     backgroundcolor=\color[RGB]{248,248,248},
+%     showspaces=false,
+%     showstringspaces=false,
+%     showtabs=false,
+%     tabsize=2,
+%     captionpos=b,
+%     breaklines=true,
+%     breakatwhitespace=true,
+%     breakautoindent=true,
+%     escapeinside={\%*}{*)},
+%     linewidth=\linewidth,
+%     basewidth=0.5em,
+% }
+
+\newcommand{\figuraancha}[2]{\figura[width=.9\columnwidth, clip]{#1}{#2}}
+\newcommand{\figuraestrecha}[2]{\figura[width=.3\columnwidth, clip]{#1}{#2}}
+\newcommand{\figuraaqui}[2][]{\includegraphics[scale=.9,#1]{#2}}
+
+% \imprimefloat
+%
+%  Cuando LaTeX se vuelva loco y envie todos nuestros floats al final
+%  del documento, podemos usar este comando a continuacion de la \figura
+%  que le ha hecho enloquecer, de este modo, esa figura saldrá en la página
+%  siguiente a la actual (probablemente una página para ella sola) y el
+%  mecanismo de posicionamiento de floats volverá a la normalidad
+%
+\newcommand{\imprimefloat}[0]{\afterpage{\clearpage}}
+
+% \nofigura
+%
+%  Para versiones preliminares del documento, en las que algunas figuras
+%  aun no han sido realizadas, pero se desea incluir un recordatorio
+%  de donde iria la figura, usar el comando 
+%  \nofigura[Descripcion]{fichero}{caption}
+%
+%  Esto muestra un rectangulo con el nombre de fichero y la descripcion opcional
+%  por defecto ``No realizada'' en un float de tamaño 20% de la página
+%  Al igual que \figura, define automaticamente \label como fig:fichero
+%
+\newcommand{\nofigura}[3][No realizada]{%
+\begin{figure}[tb]
+  \centerline{\fbox{\parbox[b][0.2\textheight][c]{0.8\textwidth}{
+    \centerline{#2}
+    \centerline{#1}
+}}}
+\caption{#3}\label{fig:#2}
+\end{figure}}
+
+\long\def\TextoIntroductorio#1{
+\mbox{}\vskip-5mm\parbox{\columnwidth}{\noindent\large\sffamily#1}
+\centerline{\rule{\columnwidth}{.2mm}}
+\vskip -4mm
+}
+\def\Asignatura#1{\gdef\@asignatura{#1}}
+\def\Convocatoria#1{\gdef\@convocatoria{#1}}
+\def\Tipo#1{\gdef\@tipo{#1}}
+\long\def\TextoIntroductorio#1{\long\def\@textointroductorio{#1\par
+\centerline{\rule{\columnwidth}{.2mm}}
+}}
+
+\long\def\@textointroductorio{}
+
+\def\TamanioHueco#1{
+\global\alturacajarespuesta#1em}
+\let\TH\TamanioHueco
+
+\def\SinHueco{\TamanioHueco{0}}
+
+
+% Comandos de layout
+\setlength{\parskip}{1pt plus 1pt minus 3pt}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\frenchspacing
+
+% Cabeceras y pies
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+\fancyfoot{\ }
+\def\Letrona{\fboxsep=1mm\fcolorbox{black}{black!20}{\resizebox{8mm}{1cm}{\@tipo}}}
+
+\ifEX@resuelto
+\def\cabecera{
+\LARGE\sffamily
+\raisebox{3mm}{\parbox{\textwidth-1cm}{%
+\centerline{\textbf{Resuelto}}\par
+\raisebox{\baselineskip}{\rule{\textwidth-1cm}{.1mm}}\par\vskip-\baselineskip
+\@asignatura\hfill\@convocatoria}}
+}
+\else
+\def\cabecera{
+\Large\sffamily
+\begin{tabular}[b]{llr}
+\hbox to 12cm {\textbf{Apellidos} \hrulefill}&
+\hbox to 8.5cm{\textbf{Nombre} \hrulefill} &
+\hbox to 5cm{\textbf{DNI} \hrulefill}\\
+\@asignatura & 
+\multicolumn{2}{r}{\@convocatoria}
+\end{tabular}
+}
+\fi
+
+\AtBeginDocument{
+\fancyhead{}
+\fancyhead[LO]{\Letrona\rlap{\cabecera}}
+\fancyhead[LE,RE]{\Letrona}
+\ifEX@resuelto\fancyhead[CE]{\textbf{\textsf{\LARGE Resuelto}}}\fi
+\pagestyle{fancy}
+\raggedcolumns
+\def\columnseprule{.1mm}\setlength{\columnsep}{1cm}
+\ifEX@columns
+\begin{multicols*}{3}
+\@textointroductorio\fi
+%\begin{tikzpicture}
+%\draw[snake=snake, segment amplitude=1mm] (0cm,0cm)--(\columnwidth,0cm);
+%\end{tikzpicture}%
+% \centerline{\rule{.1\columnwidth}{.2mm}\ \rule{.8\columnwidth}{.4mm}\ \rule{.1\columnwidth}{.2mm}}
+}
+
+
+\AtEndDocument{
+\end{multicols*}
+\immediate\write\m@ne{El examen tiene un total de \thepregunta. preguntas.}
+}
+
+
+% El siguiente código permite meter condicionalmente saltos de pregunta
+% entre las preguntas de un tipo
+\def\SaltoEnTipo#1{\def\tmp{#1}\ifx\tmp\@tipo\columnbreak\fi}
+\def\IfTipo#1#2#3{\def\tmp{#1}\ifx\tmp\@tipo#2\else#3\fi}
+
+
+% Las ultimas versiones de pandoc necesitan que este comando este definido
+\providecommand{\tightlist}{%
+\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+\endinput

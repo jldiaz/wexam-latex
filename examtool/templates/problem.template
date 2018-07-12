@@ -1,0 +1,27 @@
+% Este es el template usado para generar el fichero
+% de un problema que contenga varias preguntas
+\puntos{\V{puntos|int}} % Esto es el total de puntos de las preguntas que componen el problema
+\begin{problema}{\V{tags}}{\V{resumen}}
+\V{enunciado}
+
+%% for q in cuestiones
+% --------------------------------------------------------------------------
+\begin{pregunta}{\V{q.puntos|int}}
+\V{q.enunciado}
+
+%% if q.respuesta|trim() != "."
+\begin{solucion}\TH{\V{q.tam_hueco}}
+\V{q.respuesta}
+\end{solucion}
+%% endif
+
+%% if q.explicacion|length > 1
+\begin{explicacion}
+\V{q.explicacion}
+\end{explicacion}
+%% endif
+
+\end{pregunta}
+%% endfor
+\end{problema}
+

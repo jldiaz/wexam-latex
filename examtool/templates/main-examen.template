@@ -1,0 +1,20 @@
+\documentclass[9pt, twoside]{extarticle}
+\usepackage[examen,\V{resuelto}]{examen}
+\usepackage{textcomp}
+\usepackage{url}
+
+% Omito la titulación
+\Asignatura{\V{asignatura}}
+\Convocatoria{\V{convocatoria}: \V{fecha}}
+\Tipo{\V{tipo}}
+
+%% if intro|length > 1
+\TextoIntroductorio{\V{intro}}
+%% endif
+
+\begin{document}
+%% for p in problemas
+%\columnbreak
+\input{\V{p.filename}}
+%% endfor
+\end{document}
